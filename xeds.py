@@ -2,7 +2,7 @@
 XEDS Utility
 Michael J. McCaffrey
 '''
-import xml.etree.ElementTree as etree
+import sys
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 
@@ -56,11 +56,40 @@ def buildXML(xParent, parent):
             child = SubElement(parent, subXeds.data[0])
             buildXML(subXeds, child)
         else:
-            child = SubElement(parent, subXeds.data[0])
+            child = SubElement(parent, subXeds.data[0],
+                               {'bits': str(subXeds.data[1]),
+                                'datatype': subXeds.data[2],
+                                'units': subXeds.data[3],
+                                })
             buildXML(subXeds, child)
+
 
 def saveXML():
     print(prettify(startXML()))
+    file = open("test.xml", "w+")
+    file.write(prettify(startXML()))
+
+
+def moveElementUp(xelement):
+    pos = xelement.parent.subXeds.index(xelement)
+    if pos > 0:
+        temp = xelement.parent.subXeds[pos]
+        xelement.parent.subXeds[pos - 1] = xelement
+        xelement.parent.subXeds[pos] = temp
+        clearTemplateTree()
+        updateTemplateTree(newTemplateRoot, '')
+    return
+
+
+def moveElementDown(xelement):
+    pos = xelement.parent.subXeds.index(xelement)
+    if pos < len(xelement.parent.subXeds) - 1:
+        temp = xelement.parent.subXeds[pos]
+        xelement.parent.subXeds[pos + 1] = xelement
+        xelement.parent.subXeds[pos] = temp
+        clearTemplateTree()
+        updateTemplateTree(newTemplateRoot, '')
+    return
 
 
 '''
@@ -71,6 +100,10 @@ def clearTemplateTree():
     for child in templateTree.get_children():
         templateTree.delete(child)
 
+'''
+removeSelectedElement(xelement)
+Removes xelement from the tree.
+'''
 def removeSelectedElement(xelement):
     xelement.parent.subXeds.remove(xelement)
     clearTemplateTree()
