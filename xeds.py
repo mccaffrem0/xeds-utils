@@ -2,12 +2,12 @@
 XEDS Utility
 Michael J. McCaffrey
 '''
-import sys
+import os
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from xml.dom import minidom
 
 def prettify(elem):
@@ -15,7 +15,7 @@ def prettify(elem):
     """
     rough_string = ElementTree.tostring(elem, 'utf-8')
     reparsed = minidom.parseString(rough_string)
-    return reparsed.toprettyxml(indent="  ")
+    return reparsed.toprettyxml(indent="    ")
 
 hierarchy = []
 
@@ -41,6 +41,13 @@ class Xelement:
             self.data = [name, bits, dataType, units, isXeds]
 
 
+'''Create root Xelement called "Template". Update template tree'''
+newTemplateRoot = Xelement("Template", 0, "", "", True, None)
+
+'''*****************************************************************************************************'''
+'''**********************************************XML STUFF**********************************************'''
+'''*****************************************************************************************************'''
+
 '''
 saveXML()
 '''
@@ -64,11 +71,59 @@ def buildXML(xParent, parent):
             buildXML(subXeds, child)
 
 
-def saveXML():
+def exportXML():
+    directory = './xeds'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    filename = filedialog.asksaveasfilename(initialdir=directory,
+                                            title="Export XEDS",
+                                            defaultextension=".xml",
+                                            filetypes=([("xml", ".xml")]))
     print(prettify(startXML()))
-    file = open("test.xml", "w+")
+    file = open(filename, "w+")
     file.write(prettify(startXML()))
 
+def importXML(parent):
+    directory = './xeds'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    master.filename = filedialog.askopenfilename(initialdir=directory,
+                                                 title="Import XEDS",
+                                                 filetypes=(("xml documents", "*.xml"), ("all files", "*.*")))
+    importedTree = ElementTree.parse(master.filename)
+    root = importedTree.getroot()
+    templateTree.selection_set(newTemplateRoot.treeId)
+
+
+    XMLtoXelement(root, newTemplateRoot)
+    clearTemplateTree()
+    updateTemplateTree(newTemplateRoot, '')
+
+
+def XMLtoXelement(current, xparent):
+        for child in current:
+            if child.get('bits') is not None:
+                xcurrent = Xelement(child.tag,
+                                    child.get('bits'),
+                                    child.get('datatype'),
+                                    child.get('units'),
+                                    False,
+                                    xparent)
+            else:
+                xcurrent = Xelement(child.tag,
+                                    '',
+                                    '',
+                                    '',
+                                    True,
+                                    xparent)
+
+            xcurrent.parent.subXeds.append(xcurrent)
+            XMLtoXelement(child, xcurrent)
+
+
+'''*****************************************************************************************************'''
+'''*******************************************TREE VIEW STUFF*******************************************'''
+'''*****************************************************************************************************'''
 
 def moveElementUp(xelement):
     pos = xelement.parent.subXeds.index(xelement)
@@ -100,22 +155,13 @@ def clearTemplateTree():
     for child in templateTree.get_children():
         templateTree.delete(child)
 
-'''
-removeSelectedElement(xelement)
-Removes xelement from the tree.
-'''
-def removeSelectedElement(xelement):
-    xelement.parent.subXeds.remove(xelement)
-    clearTemplateTree()
-    updateTemplateTree(newTemplateRoot, '')
+        '''
+        updateTemplateTree(xelement, parent)
+        Populate the tree view with the contents of the Xelement tree
+        xelement: The current node to be inserted
+        parent: The parent node of the current node
+        '''
 
-
-'''
-updateTemplateTree(xelement, parent)
-Populate the tree view with the contents of the Xelement tree
-xelement: The current node to be inserted
-parent: The parent node of the current node
-'''
 def updateTemplateTree(xelement, parent):
     if not xelement.data[4]:
         xelement.treeId = templateTree.insert(parent, 'end', text=xelement.data[0],
@@ -133,17 +179,35 @@ def updateTemplateTree(xelement, parent):
             updateTemplateTree(subx, xelement.treeId)
 
 
+'''*****************************************************************************************************'''
+'''********************************************XELEMENT STUFF*******************************************'''
+'''*****************************************************************************************************'''
+
+'''
+removeSelectedElement(xelement)
+Removes xelement from the tree.
+'''
+def removeSelectedElement(xelement):
+    xelement.parent.subXeds.remove(xelement)
+    clearTemplateTree()
+    updateTemplateTree(newTemplateRoot, '')
+
+
+def addTemplateElementButton(parent):
+    name = eElemName.get()
+    bits = eElemBits.get()
+    dataType = elementType.get()
+    units = eElemUnits.get()
+    addTemplateElement(parent, name, bits, dataType, units)
+
+
 '''
 addTemplateElement(parent)
 Creates a new Xelement with parameters as set in the GUI.
 Inserts the new Xelement into the Xelement tree under the parent node
 parent: The desired parent node of the new Xelement
 '''
-def addTemplateElement(parent):
-    name = eElemName.get()
-    bits = eElemBits.get()
-    dataType = elementType.get()
-    units = eElemUnits.get()
+def addTemplateElement(parent, name, bits, dataType, units):
 
     xelement = Xelement(name, bits, dataType, units, xedsCheck.get(), parent)
     xelement.parent.subXeds.append(xelement)
@@ -154,9 +218,15 @@ def addTemplateElement(parent):
     eElemUnits.delete(0, END)
     clearTemplateTree()
     updateTemplateTree(newTemplateRoot, '')
-    templateTree.selection_set(parent.treeId)
-    templateTree.focus(parent.treeId)
+    #templateTree.selection_set(parent.treeId)
+    #templateTree.focus(parent.treeId)
 
+    return xelement
+
+
+'''*****************************************************************************************************'''
+'''**********************************************GUI STUFF**********************************************'''
+'''*****************************************************************************************************'''
 
 '''Construct the master GUI element.'''
 master = Tk()
@@ -172,18 +242,25 @@ Construct a notebook (necessary for tabs).
 Construct tabs. Arguments designate parent.
 '''
 nb = ttk.Notebook()
-create_tab = ttk.Frame(nb)
-check_tab = ttk.Frame(nb)
-template_tab = ttk.Frame(nb)
+createTab = ttk.Frame(nb)
+checkTab = ttk.Frame(nb)
+templateTab = ttk.Frame(nb)
 
 '''Add tabs to notebook and pack notebook'''
-nb.add(template_tab, text="Build Template")
-nb.add(create_tab, text="Create/Edit XEDS")
-nb.add(check_tab, text="Check System")
+nb.add(templateTab, text="Build Template")
+nb.add(createTab, text="Create/Edit XEDS")
+nb.add(checkTab, text="Check System")
 nb.pack(fill=BOTH, expand=1)
 
+'''Build top menu for template tab'''
+templateMenu = Menu(templateTab)
+fileMenu = Menu(templateMenu, tearoff=0)
+fileMenu.add_command(label="Export XML", command=exportXML)
+templateMenu.add_cascade(label="File", menu=fileMenu)
+master.config(menu=templateMenu)
+
 '''Create and configure treeview for template tab.'''
-templateTree = ttk.Treeview(template_tab, columns=("#1", "#2", "#3", "#4", "#5"))
+templateTree = ttk.Treeview(templateTab, columns=("#1", "#2", "#3", "#4", "#5"))
 templateTree["displaycolumns"] = ("#1", "#2", "#3")
 templateTree.heading("#0", text="Property/Element")
 templateTree.heading("#1", text="Bits")
@@ -203,7 +280,7 @@ templateScroll.pack(fill=BOTH, side=RIGHT)
 templateTree.pack(fill=BOTH, expand=1, pady=0, padx=10)
 
 '''Create divider within template tab'''
-newElementFrame = Frame(template_tab)
+newElementFrame = Frame(templateTab)
 
 '''Create input field for element name'''
 nameFrame = Frame(newElementFrame)
@@ -228,12 +305,12 @@ bitFrame.pack(side=LEFT, padx=20)
 '''Create dropdown menu for element data type'''
 typeFrame = Frame(newElementFrame)
 dataTypes = [
-    "UINT",
-    "INT",
-    "ENUM",
-    "CHAR5",
-    "ConRes",
-    "ConRelRes"
+    "uint",
+    "int",
+    "enum",
+    "char5",
+    "conres",
+    "conrelres"
 ]
 
 elementType = StringVar(typeFrame)
@@ -265,17 +342,17 @@ subXCheck.pack(side=LEFT)
 checkFrame.pack(side=LEFT, padx=20)
 
 '''Create label for bottom pane'''
-elemLabel = Label(template_tab, text="Add XEDS Element")
+elemLabel = Label(templateTab, text="Add XEDS Element")
 elemLabel.pack(side=TOP)
 
 '''Pack input section'''
 newElementFrame.pack()
 
 '''Create frame division for submit button'''
-addElementFrame = Frame(template_tab)
+addElementFrame = Frame(templateTab)
 
 '''Button command calls function to add element data to template'''
-bAddElement = Button(addElementFrame, text='Add Element', command=lambda: addTemplateElement(hierarchy[templateTree.item(templateTree.focus())['values'][3]]))
+bAddElement = Button(addElementFrame, text='Add Element', command=lambda: addTemplateElementButton(hierarchy[templateTree.item(templateTree.focus())['values'][3]]))
 
 '''Pack button into frame division'''
 bAddElement.pack(side=LEFT, padx=5)
@@ -287,14 +364,21 @@ bAddElement = Button(addElementFrame, text='Remove Selected', command=lambda: re
 bAddElement.pack(side=LEFT, padx=5)
 
 '''Button command calls function to save XML'''
-bSaveXML = Button(addElementFrame, text='Save XML', command=lambda: saveXML())
+bSaveXML = Button(addElementFrame, text='Save XML', command=lambda: exportXML)
+
+'''Pack button'''
+bSaveXML.pack(side=LEFT, padx=5)
+
+'''Button command calls function to save XML'''
+bLoadXML = Button(addElementFrame, text='Load XML', command=lambda: importXML(newTemplateRoot))
 
 '''Pack button and containing frame division'''
-bSaveXML.pack(side=LEFT, padx=5)
+bLoadXML.pack(side=LEFT, padx=5)
 addElementFrame.pack(pady=(5, 0))
 
-'''Once on launch, create root Xelement called "Template". Update template tree'''
-newTemplateRoot = Xelement("Template", 0, "", "", True, None)
-updateTemplateTree(newTemplateRoot, '')
+'''*****************************************************************************************************'''
+'''********************************************RUNTIME STUFF********************************************'''
+'''*****************************************************************************************************'''
 
+updateTemplateTree(newTemplateRoot, '')
 mainloop()
