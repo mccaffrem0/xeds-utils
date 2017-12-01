@@ -10,6 +10,8 @@ from tkinter import *
 from tkinter import ttk, filedialog
 from xml.dom import minidom
 
+version = 0.4
+
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
     """
@@ -235,7 +237,7 @@ master = Tk()
 master.geometry("800x640")
 
 '''Set GUI Title'''
-master.title('XEDS Utility 0.1')
+master.title('XEDS Utility ' + str(version))
 
 '''
 Construct a notebook (necessary for tabs).
