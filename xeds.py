@@ -1,6 +1,13 @@
 '''
 XEDS Utility
 Michael J. McCaffrey
+
+TODO:
+ConRes and ConRelRes Scales
+Instance Tab
+Verify Tab
+Visualize Tab?
+
 '''
 import os
 from xml.etree import ElementTree
@@ -19,7 +26,7 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="    ")
 
-hierarchy = []
+xelements = []
 
 '''
 Xelement: Describes an XEDS element, which could be a system, subsystem, sensor, etc. or a descriptive field
@@ -34,9 +41,12 @@ class Xelement:
     treeId = 0
     def __init__(self, name, bits, dataType, units, isXeds, parent):
         self.parent = parent
-        self.id = len(hierarchy)
-        hierarchy.append(self)
+        self.id = len(xelements)
+        self.value = 0
+        xelements.append(self)
         self.subXeds = []
+        if parent is not None:
+            self.parent.subXeds.append(self)
         if isXeds:
             self.data = [name, None, None, None, isXeds]
         else:
@@ -95,7 +105,6 @@ def importXML(parent):
     importedTree = ElementTree.parse(master.filename)
     root = importedTree.getroot()
     templateTree.selection_set(newTemplateRoot.treeId)
-
 
     XMLtoXelement(root, newTemplateRoot)
     clearTemplateTree()
@@ -185,11 +194,14 @@ def updateTemplateTree(xelement, parent):
 '''********************************************XELEMENT STUFF*******************************************'''
 '''*****************************************************************************************************'''
 
-'''
-removeSelectedElement(xelement)
-Removes xelement from the tree.
-'''
+
 def removeSelectedElement(xelement):
+    '''
+    removeSelectedElement(xelement)
+    Removes xelement from the tree.
+    :param xelement:
+    :return:
+    '''
     xelement.parent.subXeds.remove(xelement)
     clearTemplateTree()
     updateTemplateTree(newTemplateRoot, '')
@@ -203,32 +215,64 @@ def addTemplateElementButton(parent):
     addTemplateElement(parent, name, bits, dataType, units)
 
 
-'''
-addTemplateElement(parent)
-Creates a new Xelement with parameters as set in the GUI.
-Inserts the new Xelement into the Xelement tree under the parent node
-parent: The desired parent node of the new Xelement
-'''
 def addTemplateElement(parent, name, bits, dataType, units):
 
+    '''
+    addTemplateElement(parent)
+    Creates a new Xelement with parameters as set in the GUI.
+    Inserts the new Xelement into the Xelement tree under the parent node
+    parent: The desired parent node of the new Xelement
+
+    :param parent:
+    :param name:
+    :param bits:
+    :param dataType:
+    :param units:
+    :return:
+    '''
+
     xelement = Xelement(name, bits, dataType, units, xedsCheck.get(), parent)
-    xelement.parent.subXeds.append(xelement)
 
     eElemName.delete(0, END)
     eElemBits.delete(0, END)
-    elementType.set("UINT")
+    elementType.set("uint")
     eElemUnits.delete(0, END)
     clearTemplateTree()
     updateTemplateTree(newTemplateRoot, '')
-    #templateTree.selection_set(parent.treeId)
-    #templateTree.focus(parent.treeId)
+    templateTree.selection_set(parent.treeId)
+    addElementFrame.focus(eElemName)
 
     return xelement
 
 
 '''*****************************************************************************************************'''
-'''**********************************************GUI STUFF**********************************************'''
+'''********************************************MAIN GUI STUFF*******************************************'''
 '''*****************************************************************************************************'''
+
+
+def disableInputs(*args):
+    for input in args:
+        if type(input).__name__ == "OptionMenu":
+            elementType.set("----")
+        else:
+            input.delete(0, END)
+
+        input.config(state=DISABLED)
+
+
+def enableInputs(*args):
+    for input in args:
+        if type(input).__name__ == "OptionMenu":
+            elementType.set("uint")
+        input.config(state=NORMAL)
+
+
+def toggleInputs():
+    if xedsCheck.get():
+        disableInputs(eElemUnits, eElemBits, typeMenu)
+    else:
+        enableInputs(eElemUnits, eElemBits, typeMenu)
+
 
 '''Construct the master GUI element.'''
 master = Tk()
@@ -244,15 +288,20 @@ Construct a notebook (necessary for tabs).
 Construct tabs. Arguments designate parent.
 '''
 nb = ttk.Notebook()
-createTab = ttk.Frame(nb)
+instanceTab = ttk.Frame(nb)
 checkTab = ttk.Frame(nb)
 templateTab = ttk.Frame(nb)
 
 '''Add tabs to notebook and pack notebook'''
 nb.add(templateTab, text="Build Template")
-nb.add(createTab, text="Create/Edit XEDS")
+nb.add(instanceTab, text="Create/Edit XEDS")
 nb.add(checkTab, text="Check System")
 nb.pack(fill=BOTH, expand=1)
+
+
+'''*****************************************************************************************************'''
+'''***************************************TEMPLATE TOOLS GUI STUFF**************************************'''
+'''*****************************************************************************************************'''
 
 '''Build top menu for template tab'''
 templateMenu = Menu(templateTab)
@@ -319,9 +368,13 @@ elementType = StringVar(typeFrame)
 elementType.set(dataTypes[0])  # set default
 
 typeMenu = OptionMenu(*(typeFrame, elementType) + tuple(dataTypes))
+basefolder = os.path.dirname(__file__)
+imagepath = os.path.join(basefolder, 'img/arrow.png')
+arrow = PhotoImage(file=imagepath)
+typeMenu.config(relief=RAISED, indicatoron=0, width=75, compound='right', image=arrow)
 lTypeMenu = Label(typeFrame, text="Type: ")
-lTypeMenu.pack(pady=(0, 2))
-typeMenu.pack(pady=(2, 0))
+lTypeMenu.pack(pady=(0, 0))
+typeMenu.pack(pady=(0, 0))
 typeFrame.pack(side=LEFT, padx=20)
 
 '''Create input field for element units'''
@@ -337,7 +390,7 @@ unitsFrame.pack(side=LEFT, padx=20)
 '''Create checkbox for XEDS element'''
 xedsCheck = IntVar()
 checkFrame = Frame(newElementFrame)
-subXCheck = Checkbutton(checkFrame, variable=xedsCheck)
+subXCheck = Checkbutton(checkFrame, variable=xedsCheck, command=toggleInputs)
 subXLabel = Label(checkFrame, text="subXEDS")
 subXLabel.pack(side=LEFT)
 subXCheck.pack(side=LEFT)
@@ -354,13 +407,13 @@ newElementFrame.pack()
 addElementFrame = Frame(templateTab)
 
 '''Button command calls function to add element data to template'''
-bAddElement = Button(addElementFrame, text='Add Element', command=lambda: addTemplateElementButton(hierarchy[templateTree.item(templateTree.focus())['values'][3]]))
+bAddElement = Button(addElementFrame, text='Add Element', command=lambda: addTemplateElementButton(xelements[templateTree.item(templateTree.focus())['values'][3]]))
 
 '''Pack button into frame division'''
 bAddElement.pack(side=LEFT, padx=5)
 
 '''Button command calls function to add element data to template'''
-bAddElement = Button(addElementFrame, text='Remove Selected', command=lambda: removeSelectedElement(hierarchy[templateTree.item(templateTree.focus())['values'][3]]))
+bAddElement = Button(addElementFrame, text='Remove Selected', command=lambda: removeSelectedElement(xelements[templateTree.item(templateTree.focus())['values'][3]]))
 
 '''Pack button into frame division'''
 bAddElement.pack(side=LEFT, padx=5)
@@ -378,9 +431,91 @@ bLoadXML = Button(addElementFrame, text='Load XML', command=lambda: importXML(ne
 bLoadXML.pack(side=LEFT, padx=5)
 addElementFrame.pack(pady=(5, 0))
 
+
+'''*****************************************************************************************************'''
+'''***************************************INSTANCE TOOLS GUI STUFF**************************************'''
+'''*****************************************************************************************************'''
+
+
+def importTemplate(parent):
+    directory = './xeds'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    master.filename = filedialog.askopenfilename(initialdir=directory,
+                                                 title="Import Template",
+                                                 filetypes=(("xml documents", "*.xml"), ("all files", "*.*")))
+    importedTree = ElementTree.parse(master.filename)
+    root = importedTree.getroot()
+
+    XMLtoXelement(root, newInstanceRoot)
+    #clearFields()
+    updateFields(newInstanceRoot, firstPage)
+
+
+pages = []
+newInstanceRoot = Xelement("XEDS", 0, "", "", True, None)
+
+
+class Page:
+    def __init__(self, parent, prev):
+        self.previousPage = prev
+        self.nextPage = None
+        self.parent = parent
+        self.frame = Frame(parent)
+        pages.append(self)
+
+
+instanceButtonFrame = Frame(instanceTab)
+instanceButtonFrame.pack(side=BOTTOM)
+firstPage = Page(instanceTab, None)
+
+'''Button command calls function to save XML'''
+bLoadTemplate = Button(instanceButtonFrame, text='Load Template', command=lambda: importTemplate(newInstanceRoot))
+
+'''Pack button and containing frame division'''
+bLoadTemplate.pack(side=BOTTOM, pady=5)
+
+
+def updateFields(xelement, page):
+
+    for subx in xelement.subXeds:
+        if subx.id % 10 == 9 and subx.id < len(xelements) - 1:
+            page.nextPage = Page(page.parent, page)
+            print("\n")
+        else:
+            page.nextPage = page
+
+        if subx.data[4]:
+            print(subx.data[0] + ">")
+            #ttk.Separator(instanceTab, orient=HORIZONTAL, sticky="ew").pack()
+            #Label(page.parent, text=subx.data[0]).pack()
+            updateFields(subx, page)
+
+        else:
+            print(subx.data[0])
+
 '''*****************************************************************************************************'''
 '''********************************************RUNTIME STUFF********************************************'''
 '''*****************************************************************************************************'''
 
+
+def returnKey(event):
+    if nb.index(nb.select()) == 0:
+        addTemplateElementButton(xelements[templateTree.item(templateTree.selection())['values'][3]])
+    elif nb.index(nb.select()) == 1:
+        return
+    elif nb.index(nb.select()) == 2:
+        return
+    elif nb.index(nb.select()) == 3:
+        return
+    else:
+        return
+
+
+master.bind('<Return>', returnKey)
+master.resizable(0,0)
+
+
 updateTemplateTree(newTemplateRoot, '')
+#updateFields(newInstanceRoot, firstPage)
 mainloop()
