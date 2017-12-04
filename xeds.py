@@ -10,6 +10,7 @@ Visualize Tab?
 
 '''
 import os
+import struct
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 
@@ -17,6 +18,7 @@ from tkinter import *
 from tkinter import ttk, filedialog
 from xml.dom import minidom
 
+from bitstring import BitArray
 version = 0.4
 
 def prettify(elem):
@@ -364,14 +366,51 @@ nb.pack(fill=BOTH, expand=1)
 
 
 '''*****************************************************************************************************'''
+'''********************************************BITSTREAM STUFF******************************************'''
+'''*****************************************************************************************************'''
+
+def BitStream(root):
+
+    stream = ''
+    for xelement in xelements:
+        if xelement.data[2] != "char5" and xelement.value != '':
+            temp = int(xelement.value)
+            if not xelement.data[4]:
+                if xelement.data[1] != '':
+                    for n in range(int(xelement.data[1])):
+                        if temp & 1:
+                            stream += '1'
+                        else:
+                            stream += '0'
+                        temp = temp >> 1
+
+    return BitArray(bin=stream)
+
+
+def exportStream():
+    directory = './xeds'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    filename = filedialog.asksaveasfilename(initialdir=directory,
+                                            title="Export XEDS",
+                                            defaultextension=".xeds",
+                                            filetypes=([("XEDS", ".xeds")]))
+
+    file = open(filename, "wb")
+    stream = BitStream(newInstanceRoot)
+    stream.tofile(file)
+
+
+'''*****************************************************************************************************'''
 '''***************************************TEMPLATE TOOLS GUI STUFF**************************************'''
 '''*****************************************************************************************************'''
 
 '''Build top menu for template tab'''
 templateMenu = Menu(templateTab)
 fileMenu = Menu(templateMenu, tearoff=0)
-fileMenu.add_command(label="Export XML", command=exportX)
 fileMenu.add_command(label="Import XML", command=importX)
+fileMenu.add_command(label="Export XML", command=exportX)
+fileMenu.add_command(label="Export Bitstream", command=exportStream)
 templateMenu.add_cascade(label="File", menu=fileMenu)
 master.config(menu=templateMenu)
 
@@ -585,6 +624,7 @@ def commitValue(*arg):
         instanceTree.selection_set(xelements[index + 1].treeId)
 
     eValueSet.delete(0, END)
+    print(BitStream(newInstanceRoot))
     #instanceButtonFrame.focus_set(eValueSet)
 
 
