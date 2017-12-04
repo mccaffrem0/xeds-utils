@@ -10,7 +10,7 @@ Visualize Tab?
 
 '''
 import os
-import struct
+from xenum import *
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 
@@ -132,7 +132,7 @@ def buildXML(xParent, parent):
 
 
 def exportXML():
-    directory = './xeds'
+    directory = './templates'
     if not os.path.exists(directory):
         os.makedirs(directory)
     filename = filedialog.asksaveasfilename(initialdir=directory,
@@ -142,6 +142,24 @@ def exportXML():
     print(prettify(startXML(newTemplateRoot)))
     file = open(filename, "w+")
     file.write(prettify(startXML(newTemplateRoot)))
+
+
+def importTemplate(parent):
+    directory = './templates'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    master.filename = filedialog.askopenfilename(initialdir=directory,
+                                                 title="Import Template",
+                                                 filetypes=(("xml documents", "*.xml"), ("all files", "*.*")))
+    importedTree = ElementTree.parse(master.filename)
+    root = importedTree.getroot()
+
+    xelements.clear()
+    clearFieldTree()
+    newInstanceRoot.__init__("XEDS", 0, "", "", True, None)
+    XMLtoXelement(root, newInstanceRoot)
+
+    updateFieldTree(newInstanceRoot, '')
 
 
 def exportXEDS():
@@ -158,7 +176,7 @@ def exportXEDS():
 
 
 def importXML(parent):
-    directory = './xeds'
+    directory = './templates'
     if not os.path.exists(directory):
         os.makedirs(directory)
     master.filename = filedialog.askopenfilename(initialdir=directory,
@@ -193,7 +211,6 @@ def XMLtoXelement(current, xparent):
                                     True,
                                     xparent)
 
-            #xcurrent.parent.subXeds.append(xcurrent)
             XMLtoXelement(child, xcurrent)
 
 
@@ -530,24 +547,6 @@ addElementFrame.pack(pady=(5, 10))
 '''*****************************************************************************************************'''
 
 
-def importTemplate(parent):
-    directory = './xeds'
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    master.filename = filedialog.askopenfilename(initialdir=directory,
-                                                 title="Import Template",
-                                                 filetypes=(("xml documents", "*.xml"), ("all files", "*.*")))
-    importedTree = ElementTree.parse(master.filename)
-    root = importedTree.getroot()
-
-    xelements.clear()
-    clearFieldTree()
-    newInstanceRoot.__init__("XEDS", 0, "", "", True, None)
-    XMLtoXelement(root, newInstanceRoot)
-
-    updateFieldTree(newInstanceRoot, '')
-
-
 newInstanceRoot = Xelement("XEDS", 0, "", "", True, None)
 
 
@@ -557,9 +556,12 @@ def clearFieldTree():
 
 
 def updateFieldTree(xelement, parent):
+    valueField = xelement.value
+    if xelement.data[2] == 'enum' and xelement.value != '':
+        valueField = valueField + " -- " + enums[xelement.parent.data[0]].assign[xelement.data[0]][int(xelement.value)]
     if not xelement.data[4]:
         xelement.treeId = instanceTree.insert(parent, 'end', text=xelement.data[0],
-                                              open=True, values=(xelement.value,
+                                              open=True, values=(valueField,
                                                                  xelement.data[2],
                                                                  xelement.data[3],
                                                                  xelement.id,
