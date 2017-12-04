@@ -39,10 +39,14 @@ parent: identifies the parent of the element
 '''
 class Xelement:
     treeId = 0
+    frame = None
+    label = None
+    valueEntry = None
+
     def __init__(self, name, bits, dataType, units, isXeds, parent):
         self.parent = parent
         self.id = len(xelements)
-        self.value = 0
+        self.value = ''
         xelements.append(self)
         self.subXeds = []
         if parent is not None:
@@ -52,6 +56,20 @@ class Xelement:
         else:
             self.data = [name, bits, dataType, units, isXeds]
 
+    def makeField(self):
+        self.valueEntry = Entry(self.frame, text=self.data[0].title())
+        self.valueEntry.delete(0, END)
+        self.valueEntry.insert(0,
+                               self.data[1]
+                               + " bit "
+                               + self.data[2])
+        if self.data[3] != '':
+            self.valueEntry.insert(END,
+                                   " ("
+                                   + self.data[3]
+                                   + ")")
+        self.valueEntry.pack()
+        self.frame.pack()
 
 '''Create root Xelement called "Template". Update template tree'''
 newTemplateRoot = Xelement("Template", 0, "", "", True, None)
@@ -60,12 +78,39 @@ newTemplateRoot = Xelement("Template", 0, "", "", True, None)
 '''**********************************************XML STUFF**********************************************'''
 '''*****************************************************************************************************'''
 
+
+def exportX():
+    if nb.index(nb.select()) == 0:
+        exportXML()
+    elif nb.index(nb.select()) == 1:
+        exportXEDS()
+    elif nb.index(nb.select()) == 2:
+        return
+    elif nb.index(nb.select()) == 3:
+        return
+    else:
+        return
+
+
+def importX():
+    if nb.index(nb.select()) == 0:
+        importXML(newTemplateRoot)
+    elif nb.index(nb.select()) == 1:
+        importTemplate(newInstanceRoot)
+    elif nb.index(nb.select()) == 2:
+        return
+    elif nb.index(nb.select()) == 3:
+        return
+    else:
+        return
+
+
 '''
 saveXML()
 '''
-def startXML():
-    top = Element(newTemplateRoot.data[0])
-    buildXML(newTemplateRoot, top)
+def startXML(root):
+    top = Element(root.data[0])
+    buildXML(root, top)
     return top
 
 
@@ -80,6 +125,7 @@ def buildXML(xParent, parent):
                                 'datatype': subXeds.data[2],
                                 'units': subXeds.data[3],
                                 })
+            child.text = subXeds.value
             buildXML(subXeds, child)
 
 
@@ -91,9 +137,23 @@ def exportXML():
                                             title="Export XEDS",
                                             defaultextension=".xml",
                                             filetypes=([("xml", ".xml")]))
-    print(prettify(startXML()))
+    print(prettify(startXML(newTemplateRoot)))
     file = open(filename, "w+")
-    file.write(prettify(startXML()))
+    file.write(prettify(startXML(newTemplateRoot)))
+
+
+def exportXEDS():
+    directory = './xeds'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    filename = filedialog.asksaveasfilename(initialdir=directory,
+                                            title="Export XEDS",
+                                            defaultextension=".xml",
+                                            filetypes=([("xml", ".xml")]))
+    print(prettify(startXML(newInstanceRoot)))
+    file = open(filename, "w+")
+    file.write(prettify(startXML(newInstanceRoot)))
+
 
 def importXML(parent):
     directory = './xeds'
@@ -105,7 +165,8 @@ def importXML(parent):
     importedTree = ElementTree.parse(master.filename)
     root = importedTree.getroot()
     templateTree.selection_set(newTemplateRoot.treeId)
-
+    xelements.clear()
+    newTemplateRoot.__init__("Template", 0, "", "", True, None)
     XMLtoXelement(root, newTemplateRoot)
     clearTemplateTree()
     updateTemplateTree(newTemplateRoot, '')
@@ -120,6 +181,8 @@ def XMLtoXelement(current, xparent):
                                     child.get('units'),
                                     False,
                                     xparent)
+                if child.text is not None:
+                    xcurrent.value = child.text
             else:
                 xcurrent = Xelement(child.tag,
                                     '',
@@ -128,7 +191,7 @@ def XMLtoXelement(current, xparent):
                                     True,
                                     xparent)
 
-            xcurrent.parent.subXeds.append(xcurrent)
+            #xcurrent.parent.subXeds.append(xcurrent)
             XMLtoXelement(child, xcurrent)
 
 
@@ -172,6 +235,7 @@ def clearTemplateTree():
         xelement: The current node to be inserted
         parent: The parent node of the current node
         '''
+
 
 def updateTemplateTree(xelement, parent):
     if not xelement.data[4]:
@@ -306,7 +370,8 @@ nb.pack(fill=BOTH, expand=1)
 '''Build top menu for template tab'''
 templateMenu = Menu(templateTab)
 fileMenu = Menu(templateMenu, tearoff=0)
-fileMenu.add_command(label="Export XML", command=exportXML)
+fileMenu.add_command(label="Export XML", command=exportX)
+fileMenu.add_command(label="Import XML", command=importX)
 templateMenu.add_cascade(label="File", menu=fileMenu)
 master.config(menu=templateMenu)
 
@@ -418,18 +483,7 @@ bAddElement = Button(addElementFrame, text='Remove Selected', command=lambda: re
 '''Pack button into frame division'''
 bAddElement.pack(side=LEFT, padx=5)
 
-'''Button command calls function to save XML'''
-bSaveXML = Button(addElementFrame, text='Save XML', command=lambda: exportXML)
-
-'''Pack button'''
-bSaveXML.pack(side=LEFT, padx=5)
-
-'''Button command calls function to save XML'''
-bLoadXML = Button(addElementFrame, text='Load XML', command=lambda: importXML(newTemplateRoot))
-
-'''Pack button and containing frame division'''
-bLoadXML.pack(side=LEFT, padx=5)
-addElementFrame.pack(pady=(5, 0))
+addElementFrame.pack(pady=(5, 10))
 
 
 '''*****************************************************************************************************'''
@@ -447,63 +501,106 @@ def importTemplate(parent):
     importedTree = ElementTree.parse(master.filename)
     root = importedTree.getroot()
 
+    xelements.clear()
+    clearFieldTree()
+    newInstanceRoot.__init__("XEDS", 0, "", "", True, None)
     XMLtoXelement(root, newInstanceRoot)
-    #clearFields()
-    updateFields(newInstanceRoot, firstPage)
+
+    updateFieldTree(newInstanceRoot, '')
 
 
-pages = []
 newInstanceRoot = Xelement("XEDS", 0, "", "", True, None)
 
 
-class Page:
-    def __init__(self, parent, prev):
-        self.previousPage = prev
-        self.nextPage = None
-        self.parent = parent
-        self.frame = Frame(parent)
-        pages.append(self)
+def clearFieldTree():
+    for child in instanceTree.get_children():
+        instanceTree.delete(child)
 
 
+def updateFieldTree(xelement, parent):
+    if not xelement.data[4]:
+        xelement.treeId = instanceTree.insert(parent, 'end', text=xelement.data[0],
+                                              open=True, values=(xelement.value,
+                                                                 xelement.data[2],
+                                                                 xelement.data[3],
+                                                                 xelement.id,
+                                                                 '',
+                                                                 xelement.data[1]))
+    else:
+        xelement.treeId = instanceTree.insert(parent, 'end', text=xelement.data[0],
+                                              open=True, values=('',
+                                                                 '',
+                                                                 '',
+                                                                 xelement.id))
+        for subx in xelement.subXeds:
+            updateFieldTree(subx, xelement.treeId)
+
+
+'''Create and configure treeview for template tab.'''
+instanceTree = ttk.Treeview(instanceTab, columns=("#1", "#2", "#3", "#4", "#5", "#6"))
+instanceTree["displaycolumns"] = ("#1", "#6", "#2", "#3")
+instanceTree.heading("#0", text="Property/Element")
+instanceTree.heading("#2", text="Bits")
+instanceTree.heading("#3", text="Data Type")
+instanceTree.heading("#4", text="Units")
+instanceTree.heading("#1", text="Value")
+instanceTree.column('#1', stretch="false", minwidth=150, width=150)
+instanceTree.column('#0', stretch="false", minwidth=350, width=350)
+instanceTree.column('#2', stretch="false", minwidth=50, width=50, anchor=E)
+instanceTree.column('#3', stretch="false", minwidth=100, width=100, anchor=E)
+instanceTree.column('#4', stretch="false", minwidth=100, width=100, anchor=E)
+
+'''Configure Scrollbar'''
+instanceScroll = ttk.Scrollbar(instanceTree, command=instanceTree.yview)
+instanceTree.configure(yscrollcommand=instanceScroll.set, selectmode='browse', takefocus='false')
+instanceScroll.pack(fill=BOTH, side=RIGHT)
+
+''' Pack template treeview'''
+instanceTree.pack(fill=BOTH, expand=1, pady=0, padx=10)
+
+'''Create divider within template tab'''
+instanceFrame = Frame(instanceTab)
+
+'''Pack input section'''
+instanceFrame.pack()
+
+'''Create frame diviasion for submit button'''
 instanceButtonFrame = Frame(instanceTab)
-instanceButtonFrame.pack(side=BOTTOM)
-firstPage = Page(instanceTab, None)
 
-'''Button command calls function to save XML'''
-bLoadTemplate = Button(instanceButtonFrame, text='Load Template', command=lambda: importTemplate(newInstanceRoot))
-
-'''Pack button and containing frame division'''
-bLoadTemplate.pack(side=BOTTOM, pady=5)
+eValueSet = Entry(instanceButtonFrame)
+lValueSet = Label(instanceButtonFrame, text="Field Value")
+lValueSet.pack()
+eValueSet.pack()
 
 
-def updateFields(xelement, page):
+def commitValue(*arg):
+    index = instanceTree.item(instanceTree.selection())['values'][3]
+    xelements[instanceTree.item(instanceTree.selection())['values'][3]].value = eValueSet.get()
+    clearFieldTree()
+    updateFieldTree(newInstanceRoot, '')
+    if arg == 'shift':
+        instanceTree.selection_set(xelements[index-1].treeId)
 
-    for subx in xelement.subXeds:
-        if subx.id % 10 == 9 and subx.id < len(xelements) - 1:
-            page.nextPage = Page(page.parent, page)
-            print("\n")
-        else:
-            page.nextPage = page
+    else:
+        instanceTree.selection_set(xelements[index + 1].treeId)
 
-        if subx.data[4]:
-            print(subx.data[0] + ">")
-            #ttk.Separator(instanceTab, orient=HORIZONTAL, sticky="ew").pack()
-            #Label(page.parent, text=subx.data[0]).pack()
-            updateFields(subx, page)
+    eValueSet.delete(0, END)
+    #instanceButtonFrame.focus_set(eValueSet)
 
-        else:
-            print(subx.data[0])
+
+instanceButtonFrame.pack(pady=(5, 10))
+
 
 '''*****************************************************************************************************'''
 '''********************************************RUNTIME STUFF********************************************'''
 '''*****************************************************************************************************'''
 
 
-def returnKey(event):
+def returnKey(event, *arg):
     if nb.index(nb.select()) == 0:
         addTemplateElementButton(xelements[templateTree.item(templateTree.selection())['values'][3]])
     elif nb.index(nb.select()) == 1:
-        return
+        commitValue(arg)
     elif nb.index(nb.select()) == 2:
         return
     elif nb.index(nb.select()) == 3:
@@ -513,9 +610,7 @@ def returnKey(event):
 
 
 master.bind('<Return>', returnKey)
-master.resizable(0,0)
-
+master.resizable(0, 0)
 
 updateTemplateTree(newTemplateRoot, '')
-#updateFields(newInstanceRoot, firstPage)
 mainloop()
