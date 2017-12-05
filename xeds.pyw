@@ -12,7 +12,7 @@ Visualize Tab?
 import os
 from xenum import *
 from xml.etree import ElementTree
-from xml.etree.ElementTree import Element, SubElement, Comment, tostring
+from xml.etree.ElementTree import Element, SubElement
 
 from tkinter import *
 from tkinter import ttk, filedialog
