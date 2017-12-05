@@ -1,6 +1,6 @@
 # xeds-utils
 ##### Python utility for creating and handling eXtensible Electronic DataSheets.
---
+
 ### Requirements:
 bitstream (pip install bitstream) (https://pypi.python.org/pypi/bitstream/2.0.3)
 
@@ -8,7 +8,7 @@ bitstream (pip install bitstream) (https://pypi.python.org/pypi/bitstream/2.0.3)
 Run xeds.pyw
 
 ##### Building a Template
-1. Select the "Build Tempalte" tab from the top of the window. 
+1. Select the "Build Template" tab from the top of the window. 
 2. Select a parent element. First selection will always be "Template".
 3. Add a property or subXEDS
     - For subXEDS:
