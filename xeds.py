@@ -4,8 +4,8 @@ Michael J. McCaffrey
 
 TODO:
 ConRes and ConRelRes Scales
-Instance Tab
-Verify Tab
+Instance Tab -- DONE
+Verify Tab -- HALF DONE
 Visualize Tab?
 
 '''
@@ -17,9 +17,8 @@ from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 from tkinter import *
 from tkinter import ttk, filedialog
 from xml.dom import minidom
-
 from bitstring import BitArray
-version = 0.4
+version = 0.9
 
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
@@ -45,7 +44,7 @@ class Xelement:
     label = None
     valueEntry = None
 
-    def __init__(self, name, bits, dataType, units, isXeds, parent):
+    def __init__(self, name, bits, datatype, units, isXeds, parent):
         self.parent = parent
         self.id = len(xelements)
         self.value = ''
@@ -54,21 +53,21 @@ class Xelement:
         if parent is not None:
             self.parent.subXeds.append(self)
         if isXeds:
-            self.data = [name, None, None, None, isXeds]
+            self.data = {'name': name, 'bits': bits, 'datatype': datatype, 'units': units, 'isXeds': isXeds}
         else:
-            self.data = [name, bits, dataType, units, isXeds]
+            self.data = {'name': name, 'bits': bits, 'datatype': datatype, 'units': units, 'isXeds': isXeds}
 
     def makeField(self):
-        self.valueEntry = Entry(self.frame, text=self.data[0].title())
+        self.valueEntry = Entry(self.frame, text=self.data['name'].title())
         self.valueEntry.delete(0, END)
         self.valueEntry.insert(0,
-                               self.data[1]
+                               self.data['bits']
                                + " bit "
-                               + self.data[2])
-        if self.data[3] != '':
+                               + self.data['datatype'])
+        if self.data['units'] != '':
             self.valueEntry.insert(END,
                                    " ("
-                                   + self.data[3]
+                                   + self.data['units']
                                    + ")")
         self.valueEntry.pack()
         self.frame.pack()
@@ -96,7 +95,13 @@ def exportX():
 
 def importX():
     if nb.index(nb.select()) == 0:
-        importXML(newTemplateRoot)
+        root = importXML()
+        templateTree.selection_set(newTemplateRoot.treeId)
+        xelements.clear()
+        newTemplateRoot.__init__("Template", 0, "", "", True, None)
+        XMLtoXelement(root, newTemplateRoot)
+        clearTemplateTree()
+        updateTemplateTree(newTemplateRoot, '')
     elif nb.index(nb.select()) == 1:
         importTemplate(newInstanceRoot)
     elif nb.index(nb.select()) == 2:
@@ -111,21 +116,21 @@ def importX():
 saveXML()
 '''
 def startXML(root):
-    top = Element(root.data[0])
+    top = Element(root.data['name'])
     buildXML(root, top)
     return top
 
 
 def buildXML(xParent, parent):
     for subXeds in xParent.subXeds:
-        if subXeds.data[4]:
-            child = SubElement(parent, subXeds.data[0])
+        if subXeds.data['isXeds']:
+            child = SubElement(parent, subXeds.data['name'])
             buildXML(subXeds, child)
         else:
-            child = SubElement(parent, subXeds.data[0],
-                               {'bits': str(subXeds.data[1]),
-                                'datatype': subXeds.data[2],
-                                'units': subXeds.data[3],
+            child = SubElement(parent, subXeds.data['name'],
+                               {'bits': str(subXeds.data['bits']),
+                                'datatype': subXeds.data['datatype'],
+                                'units': subXeds.data['units'],
                                 })
             child.text = subXeds.value
             buildXML(subXeds, child)
@@ -175,7 +180,7 @@ def exportXEDS():
     file.write(prettify(startXML(newInstanceRoot)))
 
 
-def importXML(parent):
+def importXML():
     directory = './templates'
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -183,13 +188,7 @@ def importXML(parent):
                                                  title="Import XEDS",
                                                  filetypes=(("xml documents", "*.xml"), ("all files", "*.*")))
     importedTree = ElementTree.parse(master.filename)
-    root = importedTree.getroot()
-    templateTree.selection_set(newTemplateRoot.treeId)
-    xelements.clear()
-    newTemplateRoot.__init__("Template", 0, "", "", True, None)
-    XMLtoXelement(root, newTemplateRoot)
-    clearTemplateTree()
-    updateTemplateTree(newTemplateRoot, '')
+    return importedTree.getroot()
 
 
 def XMLtoXelement(current, xparent):
@@ -212,6 +211,26 @@ def XMLtoXelement(current, xparent):
                                     xparent)
 
             XMLtoXelement(child, xcurrent)
+
+
+def addFiles():
+    directory = './xeds'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    fileList = filedialog.askopenfilenames(initialdir=directory,
+                                          title="Import XEDS",
+                                          filetypes=([("xml", ".xml")]))
+
+    splitFiles = master.tk.splitlist(fileList)
+    for file in splitFiles:
+        if file not in files:
+            files.append(file)
+            stageList.insert(END, file)
+
+
+def removeFiles():
+
+    return
 
 
 '''*****************************************************************************************************'''
@@ -257,14 +276,14 @@ def clearTemplateTree():
 
 
 def updateTemplateTree(xelement, parent):
-    if not xelement.data[4]:
-        xelement.treeId = templateTree.insert(parent, 'end', text=xelement.data[0],
-                                              open=True, values=(xelement.data[1],
-                                                                 xelement.data[2],
-                                                                 xelement.data[3],
+    if not xelement.data['isXeds']:
+        xelement.treeId = templateTree.insert(parent, 'end', text=xelement.data['name'],
+                                              open=True, values=(xelement.data['bits'],
+                                                                 xelement.data['datatype'],
+                                                                 xelement.data['units'],
                                                                  xelement.id))
     else:
-        xelement.treeId = templateTree.insert(parent, 'end', text=xelement.data[0],
+        xelement.treeId = templateTree.insert(parent, 'end', text=xelement.data['name'],
                                               open=True, values=('',
                                                                  '',
                                                                  '',
@@ -323,7 +342,7 @@ def addTemplateElement(parent, name, bits, dataType, units):
     clearTemplateTree()
     updateTemplateTree(newTemplateRoot, '')
     templateTree.selection_set(parent.treeId)
-    addElementFrame.focus(eElemName)
+    eElemName.focus_set()
 
     return xelement
 
@@ -386,15 +405,27 @@ nb.pack(fill=BOTH, expand=1)
 '''********************************************BITSTREAM STUFF******************************************'''
 '''*****************************************************************************************************'''
 
+def char5ToBinary(string):
+    b = 0
+    for char in string.lower():
+        b = b << 5
+        b += ord(char) - ord('a')
+
+    return b
+
+
 def BitStream(root):
 
     stream = ''
     for xelement in xelements:
-        if xelement.data[2] != "char5" and xelement.value != '':
-            temp = int(xelement.value)
-            if not xelement.data[4]:
-                if xelement.data[1] != '':
-                    for n in range(int(xelement.data[1])):
+        value = xelement.value
+        if xelement.data['datatype'] == "char5":
+            value = char5ToBinary(value)
+        if value != '':
+            temp = int(value)
+            if not xelement.data['isXeds']:
+                if xelement.data['bits'] != '':
+                    for n in range(int(xelement.data['bits'])):
                         if temp & 1:
                             stream += '1'
                         else:
@@ -557,18 +588,18 @@ def clearFieldTree():
 
 def updateFieldTree(xelement, parent):
     valueField = xelement.value
-    if xelement.data[2] == 'enum' and xelement.value != '':
-        valueField = valueField + " -- " + enums[xelement.parent.data[0]].assign[xelement.data[0]][int(xelement.value)]
-    if not xelement.data[4]:
-        xelement.treeId = instanceTree.insert(parent, 'end', text=xelement.data[0],
+    if xelement.data['datatype'] == 'enum' and xelement.value != '':
+        valueField = valueField + " -- " + enums[xelement.parent.data['name']].assign[xelement.data['name']][int(xelement.value)]
+    if not xelement.data['isXeds']:
+        xelement.treeId = instanceTree.insert(parent, 'end', text=xelement.data['name'],
                                               open=True, values=(valueField,
-                                                                 xelement.data[2],
-                                                                 xelement.data[3],
+                                                                 xelement.data['datatype'],
+                                                                 xelement.data['units'],
                                                                  xelement.id,
                                                                  '',
-                                                                 xelement.data[1]))
+                                                                 xelement.data['bits']))
     else:
-        xelement.treeId = instanceTree.insert(parent, 'end', text=xelement.data[0],
+        xelement.treeId = instanceTree.insert(parent, 'end', text=xelement.data['name'],
                                               open=True, values=('',
                                                                  '',
                                                                  '',
@@ -620,17 +651,133 @@ def commitValue(*arg):
     clearFieldTree()
     updateFieldTree(newInstanceRoot, '')
     if arg == 'shift':
-        instanceTree.selection_set(xelements[index-1].treeId)
-
+        try:
+            instanceTree.selection_set(xelements[index-1].treeId)
+        except:
+            None
     else:
-        instanceTree.selection_set(xelements[index + 1].treeId)
+        try:
+            instanceTree.selection_set(xelements[index + 1].treeId)
+        except: None
 
     eValueSet.delete(0, END)
-    print(BitStream(newInstanceRoot))
+    print(BitStream(xelements[index]))
     #instanceButtonFrame.focus_set(eValueSet)
 
 
 instanceButtonFrame.pack(pady=(5, 10))
+
+
+'''*****************************************************************************************************'''
+'''****************************************VERIFICATION TOOLS STUFF*************************************'''
+'''*****************************************************************************************************'''
+
+
+def consolePrint(string, *args):
+
+    consoleText.config(state=NORMAL)
+
+    if len(args) == 0:
+        consoleText.insert(END, string + '\n')
+    else:
+        consoleText.insert(END, string + '\n', args)
+
+    consoleText.config(state=DISABLED)
+
+
+def collectFromInto(field, xelement, bin):
+    if xelement.data['isXeds']:
+        for subx in xelement.subXeds:
+            if subx.data['name'] == field:
+                bin.append(subx)
+            collectFromInto(field, subx, bin)
+
+
+system = []
+articles = []
+headers = []
+pins = []
+channels = []
+fields = {}
+fields.update({'article': articles,
+               'header': headers,
+               'pin': pins,
+               'channel': channels})
+
+def articleCheck():
+    consolePrint('Checking Article Compatibility')
+    for this in range(0, len(articles) - 1):
+        if articles[this].value != articles[this + 1].value:
+            consolePrint('INCOMPATIBLE', 'r')
+            consolePrint('Articles "' +
+                         enums['subsystem'].article[int(articles[this].value)] +
+                         '" and "' +
+                         enums['subsystem'].article[int(articles[this + 1].value)]
+                         + '" found.', 'r')
+            return False
+    consolePrint("PASSED", 'g')
+    return True
+
+
+def verify():
+    system.clear()
+    articles.clear()
+    headers.clear()
+    pins.clear()
+    channels.clear()
+    consolePrint('Verification started.')
+    consolePrint('Collecting data.')
+    filecount = 0
+    for file in files:
+        consolePrint("Parsing " + file)
+        system.append(Xelement('file', '', '', '', True, None))
+        XMLtoXelement(ElementTree.parse(file).getroot(), system[filecount])
+        for field in fields:
+            collectFromInto(field, system[filecount], fields[field])
+        filecount += 1
+
+    if not articleCheck():
+        consolePrint('VERIFICATION FAILED')
+        return False
+    else:
+        consolePrint('VERIFICATION PASSED')
+        return True
+
+
+'''*****************************************************************************************************'''
+'''**************************************VERIFICATION TOOLS GUI STUFF***********************************'''
+'''*****************************************************************************************************'''
+
+files = []
+
+topCheckFrame = Frame(checkTab)
+bottomCheckFrame = Frame(checkTab)
+
+bAddFile = Button(topCheckFrame, text="Add Files", command=addFiles)
+bAddFile.pack(side=LEFT)
+
+bRemFile = Button(topCheckFrame, text="Remove Files", command=removeFiles)
+bRemFile.pack(side=RIGHT)
+
+bVerify = Button(topCheckFrame, text="Verify XEDS", command=verify)
+bVerify.pack(side=BOTTOM, padx=10)
+
+stageFrame = Frame(bottomCheckFrame)
+stageList = Listbox(stageFrame, selectmode='multiple')
+stageList.pack(fill=X, expand=TRUE)
+stageFrame.pack(fill=X, padx=10, pady=(0, 5), expand=FALSE)
+
+consoleFrame = Frame(bottomCheckFrame)
+consoleFrame.config(relief=SUNKEN, borderwidth=2)
+consoleFrame.pack(fill=BOTH, padx=10, pady=(5, 0), expand=TRUE)
+consoleText = Text(consoleFrame, relief=FLAT)
+consoleText.pack(anchor=W, fill=BOTH)
+consoleText.tag_config('r', foreground='red')
+consoleText.tag_config('g', foreground='green')
+consolePrint('Add XEDS files and click "Verify" to begin.')
+
+topCheckFrame.pack(side=TOP, fill=NONE, pady=(5, 0), expand=FALSE)
+bottomCheckFrame.pack(side=BOTTOM, fill=BOTH, pady=(5, 0), expand=TRUE)
 
 
 '''*****************************************************************************************************'''
