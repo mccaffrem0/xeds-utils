@@ -1,0 +1,36 @@
+<xeds>
+    <subsystem>
+        <role bits="3" datatype="enum" units="">1</role>
+        <article bits="2" datatype="enum" units="">1</article>
+        <header>
+            <numRows bits="2" datatype="uint" units="rows">4</numRows>
+            <numColumns bits="6" datatype="uint" units="columns">26</numColumns>
+            <pin>
+                <type bits="4" datatype="enum" units="">2</type>
+                <row bits="2" datatype="uint" units="">2</row>
+                <column bits="6" datatype="uint" units="">10</column>
+                <direction bits="2" datatype="enum" units="">2</direction>
+            </pin>
+            <pin/>
+            <pin/>
+            <pin>
+                <type bits="4" datatype="enum" units="">1</type>
+                <row bits="2" datatype="uint" units="">1</row>
+                <column bits="6" datatype="uint" units="">13</column>
+                <direction bits="2" datatype="enum" units="">0</direction>
+            </pin>
+        </header>
+        <communication>
+            <channel>
+                <id bits="4" datatype="uint" units="">0</id>
+                <protocol bits="4" datatype="enum" units="">2</protocol>
+            </channel>
+            <channel/>
+            <channel/>
+        </communication>
+        <processor>
+            <family bits="80" datatype="char5" units="">msp430fr</family>
+            <pinCount bits="8" datatype="uint" units="pins">80</pinCount>
+        </processor>
+    </subsystem>
+</xeds>

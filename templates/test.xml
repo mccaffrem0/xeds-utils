@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<Template>
+    <subsystem>
+        <role bits="3" datatype="enum" units=""/>
+        <article bits="2" datatype="enum" units=""/>
+        <header>
+            <numRows bits="2" datatype="uint" units="rows"/>
+            <numColumns bits="6" datatype="uint" units="columns"/>
+            <pin>
+                <type bits="4" datatype="enum" units=""/>
+                <row bits="2" datatype="uint" units=""/>
+                <column bits="6" datatype="uint" units=""/>
+                <direction bits="2" datatype="enum" units=""/>
+            </pin>
+            <pin/>
+            <pin/>
+            <pin>
+                <type bits="4" datatype="enum" units=""/>
+                <row bits="2" datatype="uint" units=""/>
+                <column bits="6" datatype="uint" units=""/>
+                <direction bits="2" datatype="enum" units=""/>
+            </pin>
+        </header>
+        <communication>
+            <channel>
+                <id bits="4" datatype="uint" units=""/>
+                <protocol bits="4" datatype="enum" units=""/>
+            </channel>
+            <channel/>
+            <channel/>
+        </communication>
+        <processor>
+            <family bits="80" datatype="char5" units=""/>
+            <pinCount bits="8" datatype="uint" units="pins"/>
+        </processor>
+    </subsystem>
+</Template>
