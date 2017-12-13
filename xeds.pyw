@@ -143,7 +143,7 @@ def exportXML():
                                             title="Export XEDS",
                                             defaultextension=".xml",
                                             filetypes=([("xml", ".xml")]))
-    print(prettify(startXML(newTemplateRoot)))
+    #print(prettify(startXML(newTemplateRoot)))
     file = open(filename, "w+")
     file.write(prettify(startXML(newTemplateRoot)))
 
@@ -174,7 +174,7 @@ def exportXEDS():
                                             title="Export XEDS",
                                             defaultextension=".xml",
                                             filetypes=([("xml", ".xml")]))
-    print(prettify(startXML(newInstanceRoot)))
+    #print(prettify(startXML(newInstanceRoot)))
     file = open(filename, "w+")
     file.write(prettify(startXML(newInstanceRoot)))
 
@@ -236,26 +236,28 @@ def removeFiles():
 '''*******************************************TREE VIEW STUFF*******************************************'''
 '''*****************************************************************************************************'''
 
-def moveElementUp(xelement):
-    pos = xelement.parent.subXeds.index(xelement)
-    if pos > 0:
-        temp = xelement.parent.subXeds[pos]
-        xelement.parent.subXeds[pos - 1] = xelement
-        xelement.parent.subXeds[pos] = temp
-        clearTemplateTree()
-        updateTemplateTree(newTemplateRoot, '')
-    return
+def moveElementUp(event, xelement):
+    try:
+        a = xelement.parent.subXeds.index(xelement)
+        b = xelement.parent.subXeds.index(xelement) - 1
+        xelement.parent.subXeds[a], xelement.parent.subXeds[b] = xelement.parent.subXeds[b], xelement.parent.subXeds[a]
+    except:
+        return
+    clearTemplateTree()
+    updateTemplateTree(newTemplateRoot, '')
+    templateTree.selection_set(xelement.treeId)
 
 
-def moveElementDown(xelement):
-    pos = xelement.parent.subXeds.index(xelement)
-    if pos < len(xelement.parent.subXeds) - 1:
-        temp = xelement.parent.subXeds[pos]
-        xelement.parent.subXeds[pos + 1] = xelement
-        xelement.parent.subXeds[pos] = temp
-        clearTemplateTree()
-        updateTemplateTree(newTemplateRoot, '')
-    return
+def moveElementDown(event, xelement):
+    try:
+        a = xelement.parent.subXeds.index(xelement)
+        b = xelement.parent.subXeds.index(xelement) + 1
+        xelement.parent.subXeds[a], xelement.parent.subXeds[b] = xelement.parent.subXeds[b], xelement.parent.subXeds[a]
+    except:
+        return
+    clearTemplateTree()
+    updateTemplateTree(newTemplateRoot, '')
+    templateTree.selection_set(xelement.treeId)
 
 
 '''
@@ -296,19 +298,62 @@ def updateTemplateTree(xelement, parent):
 '''*****************************************************************************************************'''
 
 
-def removeSelectedElement(xelement):
+def pullXelement(event, selectedElement):
+    eElemName.delete(0, END)
+    eElemName.insert(0, selectedElement.data['name'])
+    eElemBits.delete(0, END)
+    eElemBits.insert(0, selectedElement.data['bits'])
+    elementType.set(selectedElement.data['datatype'])
+    eElemUnits.delete(0, END)
+    eElemUnits.insert(0, selectedElement.data['units'])
+    clearTemplateTree()
+    updateTemplateTree(newTemplateRoot, '')
+    templateTree.selection_set(selectedElement.treeId)
+
+def updateXelement(event, selectedElement):
+    selectedElement.data['name'] = eElemName.get()
+    selectedElement.data['bits'] = eElemBits.get()
+    selectedElement.data['datatype'] = elementType.get()
+    selectedElement.data['units'] = eElemUnits.get()
+    clearTemplateTree()
+    updateTemplateTree(newTemplateRoot, '')
+    templateTree.selection_set(selectedElement.treeId)
+
+
+def copyXelement(event, selectedElement):
+    clearTemplateTree()
+    selectedElement.parent.subXeds.append(selectedElement)
+    updateTemplateTree(newTemplateRoot, '')
+    templateTree.selection_set(selectedElement.treeId)
+    templateTree.focus(selectedElement.treeId)
+
+
+def removeSelectedElement(event, xelement):
     '''
     removeSelectedElement(xelement)
     Removes xelement from the tree.
     :param xelement:
     :return:
     '''
+    i = xelement.parent.subXeds.index(xelement)
     xelement.parent.subXeds.remove(xelement)
     clearTemplateTree()
     updateTemplateTree(newTemplateRoot, '')
+    try:
+        templateTree.selection_set(xelement.parent.subXeds[i].treeId)
+        templateTree.focus(xelement.parent.subXeds[i].treeId)
+    except:
+        try:
+            templateTree.selection_set(xelement.parent.subXeds[i - 1].treeId)
+            templateTree.focus(xelement.parent.subXeds[i - 1].treeId)
+        except:
+            templateTree.selection_set(xelement.parent.treeId)
+            templateTree.focus(xelement.parent.treeId)
 
 
 def addTemplateElementButton(parent):
+    if not parent.data['isXeds']:
+        return
     name = eElemName.get()
     bits = eElemBits.get()
     dataType = elementType.get()
@@ -404,11 +449,19 @@ nb.pack(fill=BOTH, expand=1)
 '''********************************************BITSTREAM STUFF******************************************'''
 '''*****************************************************************************************************'''
 
-def char5ToBinary(string):
+def chr5ToBinary(string):
     b = 0
     for char in string.lower():
         b = b << 5
         b += ord(char) - ord('a')
+
+    return b
+
+def chr8ToBinary(string):
+    b = 0
+    for char in string.lower():
+        b = b << 8
+        b += ord(char)
 
     return b
 
@@ -418,8 +471,10 @@ def BitStream(root):
     stream = ''
     for xelement in xelements:
         value = xelement.value
-        if xelement.data['datatype'] == "char5":
-            value = char5ToBinary(value)
+        if xelement.data['datatype'] == "chr5":
+            value = chr5ToBinary(value)
+        elif xelement.data['datatype'] == "chr8":
+            value = chr8ToBinary(value)
         if value != '':
             temp = int(value)
             if not xelement.data['isXeds']:
@@ -451,6 +506,7 @@ def exportStream():
 '''*****************************************************************************************************'''
 '''***************************************TEMPLATE TOOLS GUI STUFF**************************************'''
 '''*****************************************************************************************************'''
+
 
 '''Build top menu for template tab'''
 templateMenu = Menu(templateTab)
@@ -510,7 +566,8 @@ dataTypes = [
     "uint",
     "int",
     "enum",
-    "char5",
+    "chr5",
+    "chr8",
     "conres",
     "conrelres"
 ]
@@ -564,7 +621,7 @@ bAddElement = Button(addElementFrame, text='Add Element', command=lambda: addTem
 bAddElement.pack(side=LEFT, padx=5)
 
 '''Button command calls function to add element data to template'''
-bAddElement = Button(addElementFrame, text='Remove Selected', command=lambda: removeSelectedElement(xelements[templateTree.item(templateTree.focus())['values'][3]]))
+bAddElement = Button(addElementFrame, text='Remove Selected', command=lambda: removeSelectedElement(None, xelements[templateTree.item(templateTree.focus())['values'][3]]))
 
 '''Pack button into frame division'''
 bAddElement.pack(side=LEFT, padx=5)
@@ -588,7 +645,10 @@ def clearFieldTree():
 def updateFieldTree(xelement, parent):
     valueField = xelement.value
     if xelement.data['datatype'] == 'enum' and xelement.value != '':
-        valueField = valueField + " -- " + enums[xelement.parent.data['name']].assign[xelement.data['name']][int(xelement.value)]
+        try:
+            valueField = valueField + " -- " + enums[xelement.parent.data['name']].assign[xelement.data['name']][int(xelement.value)]
+        except:
+            valueField = valueField + " -- " + "enum error"
     if not xelement.data['isXeds']:
         xelement.treeId = instanceTree.insert(parent, 'end', text=xelement.data['name'],
                                               open=True, values=(valueField,
@@ -623,7 +683,7 @@ instanceTree.column('#4', stretch="false", minwidth=100, width=100, anchor=E)
 
 '''Configure Scrollbar'''
 instanceScroll = ttk.Scrollbar(instanceTree, command=instanceTree.yview)
-instanceTree.configure(yscrollcommand=instanceScroll.set, selectmode='browse', takefocus='false')
+instanceTree.configure(yscrollcommand=instanceScroll.set, selectmode='browse', takefocus='true')
 instanceScroll.pack(fill=BOTH, side=RIGHT)
 
 ''' Pack template treeview'''
@@ -644,23 +704,17 @@ lValueSet.pack()
 eValueSet.pack()
 
 
-def commitValue(*arg):
+def commitValue():
     index = instanceTree.item(instanceTree.selection())['values'][3]
     xelements[instanceTree.item(instanceTree.selection())['values'][3]].value = eValueSet.get()
     clearFieldTree()
     updateFieldTree(newInstanceRoot, '')
-    if arg == 'shift':
-        try:
-            instanceTree.selection_set(xelements[index-1].treeId)
-        except:
-            None
-    else:
-        try:
-            instanceTree.selection_set(xelements[index + 1].treeId)
-        except: None
+    try:
+        instanceTree.selection_set(xelements[index + 1].treeId)
+    except: None
 
     eValueSet.delete(0, END)
-    print(BitStream(xelements[index]))
+    #print(BitStream(xelements[index]))
     #instanceButtonFrame.focus_set(eValueSet)
 
 
@@ -784,11 +838,11 @@ bottomCheckFrame.pack(side=BOTTOM, fill=BOTH, pady=(5, 0), expand=TRUE)
 '''*****************************************************************************************************'''
 
 
-def returnKey(event, *arg):
+def returnKey(event):
     if nb.index(nb.select()) == 0:
         addTemplateElementButton(xelements[templateTree.item(templateTree.selection())['values'][3]])
     elif nb.index(nb.select()) == 1:
-        commitValue(arg)
+        commitValue()
     elif nb.index(nb.select()) == 2:
         return
     elif nb.index(nb.select()) == 3:
@@ -798,6 +852,12 @@ def returnKey(event, *arg):
 
 
 master.bind('<Return>', returnKey)
+master.bind('<,>', lambda event: moveElementUp(event, xelements[templateTree.item(templateTree.selection())['values'][3]]))
+master.bind('<.>', lambda event: moveElementDown(event, xelements[templateTree.item(templateTree.selection())['values'][3]]))
+master.bind('<Control-c>', lambda event: copyXelement(event, xelements[templateTree.item(templateTree.selection())['values'][3]]))
+master.bind('<Delete>', lambda event: removeSelectedElement(event, xelements[templateTree.item(templateTree.selection())['values'][3]]))
+master.bind('<Control-u>', lambda event: updateXelement(event, xelements[templateTree.item(templateTree.selection())['values'][3]]))
+master.bind('<Control-y>', lambda event: pullXelement(event, xelements[templateTree.item(templateTree.selection())['values'][3]]))
 master.resizable(0, 0)
 
 updateTemplateTree(newTemplateRoot, '')
