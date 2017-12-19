@@ -1,0 +1,158 @@
+<?xml version="1.0" ?>
+<XEDS>
+    <basic>
+        <manufacturerID bits="14" datatype="enum" units="">0</manufacturerID>
+        <modelNumber bits="15" datatype="uint" units="">0</modelNumber>
+        <versionLetter bits="5" datatype="chr5" units="">a</versionLetter>
+        <versionNumber bits="6" datatype="uint" units="">0</versionNumber>
+        <serialNumber bits="24" datatype="uint" units="">0</serialNumber>
+    </basic>
+    <subsystem>
+        <role bits="4" datatype="enum" units="">1</role>
+        <article bits="2" datatype="enum" units="">0</article>
+        <header>
+            <numPins bits="5" datatype="uint" units="pins">20</numPins>
+            <pin>
+                <id bits="5" datatype="uint" units="">1</id>
+                <function bits="4" datatype="enum" units="">2</function>
+                <direction bits="2" datatype="enum" units="">0</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">2</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">1</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">3</id>
+                <function bits="4" datatype="enum" units="">1</function>
+                <direction bits="2" datatype="enum" units="">0</direction>
+                <channel bits="4" datatype="uint" units="">0</channel>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">4</id>
+                <function bits="4" datatype="enum" units="">1</function>
+                <direction bits="2" datatype="enum" units="">1</direction>
+                <channel bits="4" datatype="uint" units="">0</channel>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">5</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">0</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">6</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">1</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">7</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">1</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">8</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">0</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">9</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">1</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">10</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">1</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">11</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">1</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">12</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">0</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">13</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">0</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">14</id>
+                <function bits="4" datatype="enum" units="">1</function>
+                <direction bits="2" datatype="enum" units="">1</direction>
+                <channel bits="4" datatype="uint" units="">1</channel>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">15</id>
+                <function bits="4" datatype="enum" units="">1</function>
+                <direction bits="2" datatype="enum" units="">2</direction>
+                <channel bits="4" datatype="uint" units="">1</channel>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">16</id>
+                <function bits="4" datatype="enum" units="">3</function>
+                <direction bits="2" datatype="enum" units="">0</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">17</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">1</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">18</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">1</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">19</id>
+                <function bits="4" datatype="enum" units="">0</function>
+                <direction bits="2" datatype="enum" units="">0</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+            <pin>
+                <id bits="5" datatype="uint" units="">20</id>
+                <function bits="4" datatype="enum" units="">3</function>
+                <direction bits="2" datatype="enum" units="">0</direction>
+                <channel bits="4" datatype="uint" units=""/>
+            </pin>
+        </header>
+        <communication>
+            <numChannels bits="4" datatype="uint" units="channels">2</numChannels>
+            <channel>
+                <id bits="4" datatype="uint" units="">0</id>
+                <protocol bits="4" datatype="enum" units="">0</protocol>
+            </channel>
+            <channel>
+                <id bits="4" datatype="uint" units="">1</id>
+                <protocol bits="4" datatype="enum" units="">1</protocol>
+            </channel>
+        </communication>
+        <power>
+            <maxVoltage bits="7" datatype="uint" units="decivolts">36</maxVoltage>
+            <minVoltage bits="7" datatype="uint" units="decivolts">18</minVoltage>
+        </power>
+        <processor>
+            <family bits="64" datatype="chr8" units="">msp430</family>
+            <type bits="48" datatype="chr8" units="">fr</type>
+            <model bits="40" datatype="chr8" units="">4133</model>
+            <maxFreq bits="7" datatype="uint" units="MHz">16</maxFreq>
+        </processor>
+    </subsystem>
+</XEDS>
