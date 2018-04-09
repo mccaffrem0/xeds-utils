@@ -26,7 +26,9 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="    ")
 
+
 xelements = []
+
 
 '''
 Xelement: Describes an XEDS element, which could be a system, subsystem, sensor, etc. or a descriptive field
@@ -37,6 +39,8 @@ units: defines the unit for a field
 isXeds: determines whether or not the element has sub-elements
 parent: identifies the parent of the element
 '''
+
+
 class Xelement:
     treeId = 0
     frame = None
