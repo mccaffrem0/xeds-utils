@@ -26,7 +26,7 @@ class channel:
 
 
 class pin:
-    type = ['gpio',
+    function = ['gpio',
             'communication',
             'power',
             'ground']
@@ -35,7 +35,7 @@ class pin:
                  'out',
                  'i/o']
 
-    assign = {'type': type, 'direction': direction}
+    assign = {'function': function, 'direction': direction}
 
 
 enums = {'subsystem': subsystem(),

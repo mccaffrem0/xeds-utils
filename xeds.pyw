@@ -5,10 +5,10 @@ Michael J. McCaffrey
 TODO:
 ConRes and ConRelRes Scales
 Instance Tab -- DONE
-Verify Tab -- HALF DONE
+Verify Tab -- STARTED
 Visualize Tab?
-
 '''
+
 import os
 from xenum import *
 from xml.etree import ElementTree
